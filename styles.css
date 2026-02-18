@@ -238,6 +238,12 @@ a {
   margin-top: 20px;
 }
 
+.settings-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2rem 0;
+}
+
 .btn-primary {
   padding: 10px 20px;
   background: var(--text);

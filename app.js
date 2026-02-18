@@ -368,6 +368,13 @@
     key.value = localStorage.getItem("notion_key") || "";
     db.value = localStorage.getItem("notion_db") || "";
     proxy.value = localStorage.getItem("cors_proxy") || "";
+
+    // Google Calendar credentials
+    var googleKey = document.getElementById("google-api-key");
+    var googleCalId = document.getElementById("google-calendar-id");
+    googleKey.value = localStorage.getItem("google_api_key") || "";
+    googleCalId.value = localStorage.getItem("google_calendar_id") || "";
+
     $settingsPanel.classList.remove("hidden");
   }
 
@@ -382,8 +389,16 @@
     localStorage.setItem("notion_key", key);
     localStorage.setItem("notion_db", db);
     localStorage.setItem("cors_proxy", proxy);
+
+    // Google Calendar credentials
+    var googleKey = document.getElementById("google-api-key").value.trim();
+    var googleCalId = document.getElementById("google-calendar-id").value.trim();
+    localStorage.setItem("google_api_key", googleKey);
+    localStorage.setItem("google_calendar_id", googleCalId);
+
     closeSettings();
     if (key && db) fetchNotionEvents(key, db, proxy);
+    if (googleKey && googleCalId) fetchGoogleCalendarEvents(googleKey, googleCalId);
   }
 
   /* ---------- Notion API Integration ---------- */
@@ -471,6 +486,71 @@
       start: start,
       end: end,
       description: desc,
+    };
+  }
+
+  /* ---------- Google Calendar API Integration ---------- */
+
+  /**
+   * Fetch events from Google Calendar API.
+   * API Documentation: https://developers.google.com/calendar/api/v3/reference/events/list
+   */
+  function fetchGoogleCalendarEvents(apiKey, calendarId) {
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var url = "https://www.googleapis.com/calendar/v3/calendars/" +
+      encodeURIComponent(calendarId) +
+      "/events?key=" + encodeURIComponent(apiKey) +
+      "&timeMin=" + today.toISOString() +
+      "&maxResults=100" +
+      "&singleEvents=true" +
+      "&orderBy=startTime";
+
+    fetch(url)
+      .then(function (res) {
+        if (!res.ok) throw new Error("Google Calendar API error: " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        var fetched = (data.items || []).map(parseGoogleEvent).filter(Boolean);
+        // Merge with existing events (keep unique by id)
+        var ids = new Set(fetched.map(function (e) { return e.id; }));
+        state.events = fetched.concat(
+          state.events.filter(function (e) { return !ids.has(e.id); })
+        );
+        render();
+      })
+      .catch(function (err) {
+        console.error("Failed to fetch Google Calendar events:", err);
+        alert("Could not fetch events from Google Calendar. Check your API key and calendar ID.");
+      });
+  }
+
+  /** Parse a Google Calendar event object into our event format. */
+  function parseGoogleEvent(event) {
+    if (!event.start) return null;
+
+    var start = event.start.dateTime || event.start.date;
+    var end = event.end ? (event.end.dateTime || event.end.date) : null;
+
+    // Handle all-day events (date only, no time)
+    if (event.start.date && !event.start.dateTime) {
+      var startParts = event.start.date.split("-");
+      start = new Date(+startParts[0], +startParts[1] - 1, +startParts[2], 0, 0, 0).toISOString();
+      if (event.end && event.end.date) {
+        var endParts = event.end.date.split("-");
+        end = new Date(+endParts[0], +endParts[1] - 1, +endParts[2], 23, 59, 59).toISOString();
+      } else {
+        end = null;
+      }
+    }
+
+    return {
+      id: "google-" + event.id,
+      title: event.summary || "Untitled",
+      start: start,
+      end: end,
+      description: event.description || "",
     };
   }
 
@@ -588,6 +668,13 @@
     var savedProxy = localStorage.getItem("cors_proxy");
     if (savedKey && savedDb) {
       fetchNotionEvents(savedKey, savedDb, savedProxy || "");
+    }
+
+    // Auto-sync from Google Calendar if credentials are saved
+    var savedGoogleKey = localStorage.getItem("google_api_key");
+    var savedGoogleCalId = localStorage.getItem("google_calendar_id");
+    if (savedGoogleKey && savedGoogleCalId) {
+      fetchGoogleCalendarEvents(savedGoogleKey, savedGoogleCalId);
     }
 
     // Wire up UI
