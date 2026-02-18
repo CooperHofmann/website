@@ -38,6 +38,21 @@
       </div>
     </header>
 
+    <!-- PIN unlock overlay (shown when encrypted credentials exist) -->
+    <div id="pin-overlay" class="pin-overlay hidden">
+      <div class="pin-dialog">
+        <div class="pin-icon">&#128274;</div>
+        <h3>Unlock Credentials</h3>
+        <p class="pin-hint">Enter your PIN to decrypt your saved API keys.</p>
+        <input id="pin-input" type="password" class="pin-field" placeholder="Enter PIN" autocomplete="off" />
+        <p id="pin-error" class="pin-error"></p>
+        <div class="pin-actions">
+          <button id="pin-unlock-btn" class="btn-primary">Unlock</button>
+          <button id="pin-skip-btn" class="btn-secondary">Skip</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Settings panel for Notion integration (hidden by default) -->
     <div id="settings-panel" class="settings-panel hidden">
       <div class="settings-inner">
@@ -72,6 +87,16 @@
           Get your API key from
           <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a>
         </p>
+        <div class="settings-divider"></div>
+        <h3>PIN Protection <span class="optional">(Recommended)</span></h3>
+        <p class="settings-hint">
+          Set a PIN to encrypt your API keys before they are stored.
+          You will need this PIN to unlock your credentials on future visits.
+        </p>
+        <label>
+          PIN
+          <input id="settings-pin" type="password" placeholder="Enter a PIN to encrypt credentials" autocomplete="off" />
+        </label>
         <div class="settings-actions">
           <button id="save-settings" class="btn-primary">Save &amp; Sync</button>
           <button id="close-settings" class="btn-secondary">Cancel</button>
