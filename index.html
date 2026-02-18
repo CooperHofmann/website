@@ -58,6 +58,20 @@
           CORS Proxy URL <span class="optional">(optional)</span>
           <input id="cors-proxy" type="text" placeholder="https://your-proxy.example.com/" autocomplete="off" />
         </label>
+        <div class="settings-divider"></div>
+        <h3>Google Calendar <span class="optional">(Optional)</span></h3>
+        <label>
+          API Key
+          <input id="google-api-key" type="password" placeholder="AIza..." autocomplete="off" />
+        </label>
+        <label>
+          Calendar ID
+          <input id="google-calendar-id" type="text" placeholder="your-email@gmail.com or calendar-id" autocomplete="off" />
+        </label>
+        <p class="settings-hint">
+          Get your API key from
+          <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a>
+        </p>
         <div class="settings-actions">
           <button id="save-settings" class="btn-primary">Save &amp; Sync</button>
           <button id="close-settings" class="btn-secondary">Cancel</button>

@@ -104,6 +104,42 @@ Credentials are stored in `localStorage` and used on subsequent page loads.
 
 ---
 
+## Google Calendar Integration (Alternative/Additional)
+
+You can also sync events from Google Calendar, which works great as a bridge to Apple Calendar.
+
+### 1. Get a Google Calendar API Key
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project (or select existing)
+3. Enable the **Google Calendar API**
+4. Go to **Credentials** → **Create Credentials** → **API Key**
+5. Copy your API key
+
+### 2. Find Your Calendar ID
+
+1. Open [Google Calendar](https://calendar.google.com)
+2. Click the three dots next to your calendar → **Settings and sharing**
+3. Scroll to **Integrate calendar**
+4. Copy the **Calendar ID** (usually your email address)
+
+### 3. Connect in the Calendar
+
+1. Open the calendar and click the **⚙ gear icon**
+2. Enter your **Google Calendar API Key** and **Calendar ID**
+3. Click **Save & Sync**
+
+### 4. Sync with Apple Calendar
+
+In Apple Calendar:
+1. Go to **Settings** → **Accounts** → **Add Account** → **Google**
+2. Sign in with your Google account
+3. Enable Calendar sync
+
+Now events flow: **Apple Calendar ↔ Google Calendar ↔ Your Web App**
+
+---
+
 ## Cross-Website Data Sharing
 
 ### Import Events via URL Parameters
