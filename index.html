@@ -44,7 +44,7 @@
         <div class="pin-icon">&#128274;</div>
         <h3>Unlock Credentials</h3>
         <p class="pin-hint">Enter your PIN to decrypt your saved API keys.</p>
-        <input id="pin-input" type="password" class="pin-field" placeholder="Enter PIN" autocomplete="off" />
+        <input id="pin-input" type="password" class="pin-field" placeholder="Enter PIN" autocomplete="one-time-code" />
         <p id="pin-error" class="pin-error"></p>
         <div class="pin-actions">
           <button id="pin-unlock-btn" class="btn-primary">Unlock</button>
@@ -95,7 +95,7 @@
         </p>
         <label>
           PIN
-          <input id="settings-pin" type="password" placeholder="Enter a PIN to encrypt credentials" autocomplete="off" />
+          <input id="settings-pin" type="password" placeholder="Enter a PIN to encrypt credentials" autocomplete="one-time-code" />
         </label>
         <div class="settings-actions">
           <button id="save-settings" class="btn-primary">Save &amp; Sync</button>

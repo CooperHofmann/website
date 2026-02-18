@@ -43,7 +43,7 @@
       "raw", enc.encode(pin), "PBKDF2", false, ["deriveKey"]
     ).then(function (keyMaterial) {
       return crypto.subtle.deriveKey(
-        { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+        { name: "PBKDF2", salt: salt, iterations: 600000, hash: "SHA-256" },
         keyMaterial,
         { name: "AES-GCM", length: 256 },
         false,
@@ -64,10 +64,15 @@
         enc.encode(JSON.stringify(data))
       );
     }).then(function (ct) {
+      function toBase64(arr) {
+        var binary = "";
+        for (var i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
+        return btoa(binary);
+      }
       return JSON.stringify({
-        salt: btoa(String.fromCharCode.apply(null, salt)),
-        iv: btoa(String.fromCharCode.apply(null, iv)),
-        ct: btoa(String.fromCharCode.apply(null, new Uint8Array(ct))),
+        salt: toBase64(salt),
+        iv: toBase64(iv),
+        ct: toBase64(new Uint8Array(ct)),
       });
     });
   }
