@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Calendar — Notion-Connected</title>
+    <title>Productivity Hub — Calendar &amp; More</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,7 +16,7 @@
     <!-- Top navigation bar -->
     <header class="topbar">
       <div class="topbar-left">
-        <h1 class="wordmark">Calendar</h1>
+        <h1 class="wordmark">Productivity Hub</h1>
       </div>
       <div class="topbar-center">
         <button id="prev-btn" class="nav-arrow" aria-label="Previous">&larr;</button>
@@ -44,6 +44,40 @@
         <span id="sync-status" class="sync-status" title="Sync status">&#10003;</span>
       </div>
     </header>
+
+    <!-- Main section navigation -->
+    <nav class="main-nav" role="tablist" aria-label="Main sections">
+      <button class="main-nav-btn active" data-section="calendar" role="tab" aria-selected="true">
+        <span class="main-nav-icon">&#128197;</span><span class="main-nav-label">Calendar</span>
+      </button>
+      <button class="main-nav-btn" data-section="tasks" role="tab" aria-selected="false">
+        <span class="main-nav-icon">&#10003;</span><span class="main-nav-label">Tasks</span>
+      </button>
+      <button class="main-nav-btn" data-section="timer" role="tab" aria-selected="false">
+        <span class="main-nav-icon">&#9201;</span><span class="main-nav-label">Timer</span>
+      </button>
+      <button class="main-nav-btn" data-section="assignments" role="tab" aria-selected="false">
+        <span class="main-nav-icon">&#128218;</span><span class="main-nav-label">Assignments</span>
+      </button>
+      <button class="main-nav-btn" data-section="notes" role="tab" aria-selected="false">
+        <span class="main-nav-icon">&#128221;</span><span class="main-nav-label">Notes</span>
+      </button>
+      <button class="main-nav-btn" data-section="dashboard" role="tab" aria-selected="false">
+        <span class="main-nav-icon">&#128202;</span><span class="main-nav-label">Dashboard</span>
+      </button>
+      <button class="main-nav-btn" data-section="habits" role="tab" aria-selected="false">
+        <span class="main-nav-icon">&#128293;</span><span class="main-nav-label">Habits</span>
+      </button>
+      <button class="main-nav-btn" data-section="goals" role="tab" aria-selected="false">
+        <span class="main-nav-icon">&#127919;</span><span class="main-nav-label">Goals</span>
+      </button>
+      <button class="main-nav-btn" data-section="bookmarks" role="tab" aria-selected="false">
+        <span class="main-nav-icon">&#128278;</span><span class="main-nav-label">Bookmarks</span>
+      </button>
+      <button class="main-nav-btn" id="focus-mode-btn" data-section="focus" role="tab" aria-selected="false">
+        <span class="main-nav-icon">&#127793;</span><span class="main-nav-label">Focus</span>
+      </button>
+    </nav>
 
     <!-- PIN unlock overlay (shown when encrypted credentials exist) -->
     <div id="pin-overlay" class="pin-overlay hidden">
@@ -247,7 +281,47 @@
     </div>
 
     <!-- Main calendar area — rendered dynamically by app.js -->
-    <main id="calendar" class="calendar-wrap"></main>
+    <main id="calendar" class="calendar-wrap app-section active-section"></main>
+
+    <!-- Tasks section -->
+    <section id="section-tasks" class="app-section" style="display:none">
+      <div class="section-container" id="tasks-container"></div>
+    </section>
+
+    <!-- Timer section -->
+    <section id="section-timer" class="app-section" style="display:none">
+      <div class="section-container" id="timer-container"></div>
+    </section>
+
+    <!-- Assignments section -->
+    <section id="section-assignments" class="app-section" style="display:none">
+      <div class="section-container" id="assignments-container"></div>
+    </section>
+
+    <!-- Notes section -->
+    <section id="section-notes" class="app-section" style="display:none">
+      <div class="section-container" id="notes-container"></div>
+    </section>
+
+    <!-- Dashboard section -->
+    <section id="section-dashboard" class="app-section" style="display:none">
+      <div class="section-container" id="dashboard-container"></div>
+    </section>
+
+    <!-- Habits section -->
+    <section id="section-habits" class="app-section" style="display:none">
+      <div class="section-container" id="habits-container"></div>
+    </section>
+
+    <!-- Goals section -->
+    <section id="section-goals" class="app-section" style="display:none">
+      <div class="section-container" id="goals-container"></div>
+    </section>
+
+    <!-- Bookmarks section -->
+    <section id="section-bookmarks" class="app-section" style="display:none">
+      <div class="section-container" id="bookmarks-container"></div>
+    </section>
 
     <!-- Event detail modal -->
     <div id="event-modal" class="modal hidden" role="dialog" aria-modal="true">
@@ -266,13 +340,23 @@
     </div>
 
     <footer class="footer">
-      <p>&copy; 2026 Calendar App &middot; Powered by Notion</p>
+      <p>&copy; 2026 Productivity Hub &middot; Calendar &amp; Task Management</p>
     </footer>
 
     <script src="recurrence.js"></script>
     <script src="notifications.js"></script>
     <script src="ics-parser.js"></script>
     <script src="sync.js"></script>
+    <script src="todo.js"></script>
+    <script src="timer.js"></script>
+    <script src="assignments.js"></script>
+    <script src="notes.js"></script>
+    <script src="habits.js"></script>
+    <script src="goals.js"></script>
+    <script src="bookmarks.js"></script>
+    <script src="dashboard.js"></script>
+    <script src="focus.js"></script>
     <script src="app.js"></script>
+    <script src="init.js"></script>
   </body>
 </html>

@@ -1,15 +1,32 @@
-# Calendar — Notion-Connected
+# Productivity Hub — Calendar & More
 
-A lightweight, minimalistic-brutalist calendar application inspired by Apple's design language. Built with vanilla HTML, CSS, and JavaScript — no build step required, ready for GitHub Pages.
+A lightweight, feature-rich productivity application built with vanilla HTML, CSS, and JavaScript — no build step required, ready for GitHub Pages.
 
 ## Features
 
+### Calendar
 - **Monthly / Weekly / Daily views** — switch seamlessly between perspectives
 - **Notion integration** — sync events from a Notion database
 - **Google Calendar integration** — sync from Google Calendar as an alternative or bridge to Apple Calendar
 - **PIN-protected credentials** — API keys are encrypted (AES-GCM) in the browser before storage
 - **JSON export** — download all events as a JSON file
 - **URL-parameter import** — load events from external sources via query string
+
+### Productivity Suite
+- **Todo List** — Task management with categories (School/Home/Personal/Work), priorities, due dates, drag-to-reorder, and filtering
+- **Pomodoro Timer** — Circular progress timer with focus/break sessions, category tagging, and session logging
+- **Assignment Tracker** — Card and table views with urgency color coding, due date countdown, and archive
+- **Quick Notes** — Note-taking with search, pinning, tags, and simple markdown support
+- **Weekly Dashboard** — Aggregated stats, category breakdown, GitHub-style activity heatmap, and week-over-week comparison
+- **Habit Tracker** — Weekly grid with click-to-fill circles, streak counting, and completion rates
+- **Goal Tracker** — Weekly/monthly goals with progress bars, milestones, and celebration on completion
+- **Focus Mode** — Distraction-free fullscreen overlay with timer and scratch pad
+- **Bookmark Manager** — Card-based link organizer with favicons, categories, tags, and search
+
+### Design System
+- **Color-coded categories** — School (blue), Home (green), Personal (purple), Work (orange)
+- **Keyboard shortcuts** — Alt+1 through Alt+9 for quick section switching
+- **Auto-save** — All data persists to localStorage automatically
 - **Responsive** — works on desktop, tablet, and mobile
 - **Zero dependencies** — vanilla JS, no frameworks
 
@@ -278,10 +295,24 @@ In `app.js`, edit the `seedDemoEvents()` function to add your own default events
 
 ```
 .
-├── index.html    — Calendar markup and structure
-├── styles.css    — All styles (brutalist / Apple-inspired)
-├── app.js        — Calendar logic, Notion sync, export/import
-└── README.md     — This file
+├── index.html        — Main markup, navigation, and section containers
+├── styles.css        — All styles (design system, responsive)
+├── app.js            — Calendar logic, Notion sync, export/import
+├── init.js           — Tab navigation and module initialization
+├── todo.js           — Todo list module
+├── timer.js          — Pomodoro timer module
+├── assignments.js    — Assignment/deadline tracker module
+├── notes.js          — Quick notes module
+├── dashboard.js      — Weekly dashboard module
+├── habits.js         — Habit tracker module
+├── goals.js          — Goal tracker module
+├── focus.js          — Focus mode module
+├── bookmarks.js      — Bookmark manager module
+├── recurrence.js     — Recurring event engine
+├── notifications.js  — Browser notification reminders
+├── ics-parser.js     — iCalendar import/export
+├── sync.js           — localStorage and sync management
+└── README.md         — This file
 ```
 
 ## License

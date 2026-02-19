@@ -10,6 +10,7 @@
   --border: #e5e5e5;
   --text: #1d1d1f;
   --text-secondary: #6e6e73;
+  --text-muted: #9CA3AF;
   --accent: #0071e3;
   --accent-light: #e8f0fe;
   --today-bg: #0071e3;
@@ -19,8 +20,20 @@
   --radius: 12px;
   --radius-sm: 8px;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif;
+
+  /* Category colors */
+  --cat-school: #3B82F6;
+  --cat-home: #10B981;
+  --cat-personal: #8B5CF6;
+  --cat-work: #F59E0B;
+
+  /* Status colors */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
 }
 
 /* ---------- Reset ---------- */
@@ -1037,5 +1050,89 @@ a {
   .color-option {
     width: 28px;
     height: 28px;
+  }
+}
+
+/* ==========================================================================
+   Main Navigation Tabs
+   ========================================================================== */
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.main-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.main-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.main-nav-btn:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+.main-nav-btn.active {
+  background: var(--text);
+  color: var(--surface);
+}
+
+.main-nav-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* ==========================================================================
+   Section Containers
+   ========================================================================== */
+
+.app-section {
+  flex: 1;
+  min-height: 0;
+}
+
+.section-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ==========================================================================
+   Responsive — Main Nav
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .main-nav {
+    padding: 6px 12px;
+    gap: 1px;
+  }
+  .main-nav-btn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+  .main-nav-label {
+    display: none;
+  }
+  .main-nav-icon {
+    font-size: 1.2rem;
+  }
+  .section-container {
+    padding: 16px;
   }
 }
