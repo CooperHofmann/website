@@ -22,6 +22,9 @@
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+      if (typeof CloudSync !== "undefined") {
+        CloudSync.syncToCloud("notes", notes);
+      }
     } catch (e) {
       console.error("Failed to save notes:", e);
     }
