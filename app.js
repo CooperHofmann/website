@@ -31,7 +31,69 @@
     month: new Date().getMonth(),
     day: new Date().getDate(),
     events: [],           // Array of { id, title, start, end, description }
+    credentials: null,    // Decrypted credentials held in memory
   };
+
+  /* ---------- PIN Encryption / Decryption (AES-GCM + PBKDF2) ---------- */
+
+  /** Derive an AES-GCM key from a PIN string and salt using PBKDF2. */
+  function deriveKey(pin, salt) {
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey(
+      "raw", enc.encode(pin), "PBKDF2", false, ["deriveKey"]
+    ).then(function (keyMaterial) {
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: salt, iterations: 600000, hash: "SHA-256" },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    });
+  }
+
+  /** Encrypt a credentials object with the given PIN. Returns a JSON string. */
+  function encryptCredentials(pin, data) {
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var enc = new TextEncoder();
+    return deriveKey(pin, salt).then(function (key) {
+      return crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        key,
+        enc.encode(JSON.stringify(data))
+      );
+    }).then(function (ct) {
+      function toBase64(arr) {
+        var binary = "";
+        for (var i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
+        return btoa(binary);
+      }
+      return JSON.stringify({
+        salt: toBase64(salt),
+        iv: toBase64(iv),
+        ct: toBase64(new Uint8Array(ct)),
+      });
+    });
+  }
+
+  /** Decrypt a stored credentials string with the given PIN. Returns parsed object. */
+  function decryptCredentials(pin, encryptedStr) {
+    var parsed = JSON.parse(encryptedStr);
+    var salt = Uint8Array.from(atob(parsed.salt), function (c) { return c.charCodeAt(0); });
+    var iv = Uint8Array.from(atob(parsed.iv), function (c) { return c.charCodeAt(0); });
+    var ct = Uint8Array.from(atob(parsed.ct), function (c) { return c.charCodeAt(0); });
+    return deriveKey(pin, salt).then(function (key) {
+      return crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, ct);
+    }).then(function (plainBuf) {
+      return JSON.parse(new TextDecoder().decode(plainBuf));
+    });
+  }
+
+  /** Check whether encrypted credentials exist in localStorage. */
+  function hasEncryptedCredentials() {
+    return !!localStorage.getItem("encrypted_credentials");
+  }
 
   /* ---------- DOM References ---------- */
 
@@ -50,6 +112,14 @@
   const $modalTitle = document.getElementById("modal-title");
   const $modalTime = document.getElementById("modal-time");
   const $modalDesc = document.getElementById("modal-desc");
+
+  // PIN-related elements
+  const $pinOverlay = document.getElementById("pin-overlay");
+  const $pinInput = document.getElementById("pin-input");
+  const $pinUnlockBtn = document.getElementById("pin-unlock-btn");
+  const $pinError = document.getElementById("pin-error");
+  const $pinSkipBtn = document.getElementById("pin-skip-btn");
+  const $settingsPin = document.getElementById("settings-pin");
 
   /* ---------- Helpers ---------- */
 
@@ -361,19 +431,23 @@
   /* ---------- Settings / Notion ---------- */
 
   function openSettings() {
-    // Populate fields from localStorage
+    // Populate fields from in-memory credentials (decrypted) or fall back to localStorage
+    var creds = state.credentials || {};
     var key = document.getElementById("notion-key");
     var db = document.getElementById("notion-db");
     var proxy = document.getElementById("cors-proxy");
-    key.value = localStorage.getItem("notion_key") || "";
-    db.value = localStorage.getItem("notion_db") || "";
-    proxy.value = localStorage.getItem("cors_proxy") || "";
+    key.value = creds.notion_key || localStorage.getItem("notion_key") || "";
+    db.value = creds.notion_db || localStorage.getItem("notion_db") || "";
+    proxy.value = creds.cors_proxy || localStorage.getItem("cors_proxy") || "";
 
     // Google Calendar credentials
     var googleKey = document.getElementById("google-api-key");
     var googleCalId = document.getElementById("google-calendar-id");
-    googleKey.value = localStorage.getItem("google_api_key") || "";
-    googleCalId.value = localStorage.getItem("google_calendar_id") || "";
+    googleKey.value = creds.google_api_key || localStorage.getItem("google_api_key") || "";
+    googleCalId.value = creds.google_calendar_id || localStorage.getItem("google_calendar_id") || "";
+
+    // Clear PIN field each time
+    $settingsPin.value = "";
 
     $settingsPanel.classList.remove("hidden");
   }
@@ -386,16 +460,51 @@
     var key = document.getElementById("notion-key").value.trim();
     var db = document.getElementById("notion-db").value.trim();
     var proxy = document.getElementById("cors-proxy").value.trim();
-    localStorage.setItem("notion_key", key);
-    localStorage.setItem("notion_db", db);
-    localStorage.setItem("cors_proxy", proxy);
-
-    // Google Calendar credentials
     var googleKey = document.getElementById("google-api-key").value.trim();
     var googleCalId = document.getElementById("google-calendar-id").value.trim();
-    localStorage.setItem("google_api_key", googleKey);
-    localStorage.setItem("google_calendar_id", googleCalId);
+    var pin = $settingsPin.value;
 
+    var creds = {
+      notion_key: key,
+      notion_db: db,
+      cors_proxy: proxy,
+      google_api_key: googleKey,
+      google_calendar_id: googleCalId,
+    };
+
+    // Keep decrypted credentials in memory
+    state.credentials = creds;
+
+    var hasKeys = key || googleKey;
+
+    if (pin && hasKeys) {
+      // Encrypt and store credentials, then remove any old plain-text keys
+      encryptCredentials(pin, creds).then(function (encrypted) {
+        localStorage.setItem("encrypted_credentials", encrypted);
+        // Remove legacy plain-text keys
+        localStorage.removeItem("notion_key");
+        localStorage.removeItem("notion_db");
+        localStorage.removeItem("cors_proxy");
+        localStorage.removeItem("google_api_key");
+        localStorage.removeItem("google_calendar_id");
+        afterSave(key, db, proxy, googleKey, googleCalId);
+      }).catch(function (err) {
+        console.error("Encryption failed:", err);
+        alert("Failed to encrypt credentials. They were not saved.");
+      });
+    } else {
+      // No PIN provided — store as plain text (backward-compatible)
+      localStorage.setItem("notion_key", key);
+      localStorage.setItem("notion_db", db);
+      localStorage.setItem("cors_proxy", proxy);
+      localStorage.setItem("google_api_key", googleKey);
+      localStorage.setItem("google_calendar_id", googleCalId);
+      afterSave(key, db, proxy, googleKey, googleCalId);
+    }
+  }
+
+  /** Common post-save logic: close panel and sync. */
+  function afterSave(key, db, proxy, googleKey, googleCalId) {
     closeSettings();
     if (key && db) fetchNotionEvents(key, db, proxy);
     if (googleKey && googleCalId) fetchGoogleCalendarEvents(googleKey, googleCalId);
@@ -653,6 +762,48 @@
     ];
   }
 
+  /* ---------- PIN Unlock Flow ---------- */
+
+  /** Show the PIN overlay and wire up unlock logic. */
+  function showPinOverlay() {
+    $pinOverlay.classList.remove("hidden");
+    $pinInput.value = "";
+    $pinError.textContent = "";
+    $pinInput.focus();
+  }
+
+  /** Attempt to unlock encrypted credentials with the entered PIN. */
+  function attemptUnlock() {
+    var pin = $pinInput.value;
+    if (!pin) {
+      $pinError.textContent = "Please enter your PIN.";
+      return;
+    }
+
+    var encrypted = localStorage.getItem("encrypted_credentials");
+    $pinUnlockBtn.disabled = true;
+    $pinError.textContent = "";
+
+    decryptCredentials(pin, encrypted).then(function (creds) {
+      state.credentials = creds;
+      $pinOverlay.classList.add("hidden");
+      $pinUnlockBtn.disabled = false;
+
+      // Sync with decrypted credentials
+      if (creds.notion_key && creds.notion_db) {
+        fetchNotionEvents(creds.notion_key, creds.notion_db, creds.cors_proxy || "");
+      }
+      if (creds.google_api_key && creds.google_calendar_id) {
+        fetchGoogleCalendarEvents(creds.google_api_key, creds.google_calendar_id);
+      }
+    }).catch(function () {
+      $pinError.textContent = "Invalid PIN. Please try again.";
+      $pinInput.value = "";
+      $pinInput.focus();
+      $pinUnlockBtn.disabled = false;
+    });
+  }
+
   /* ---------- Initialization ---------- */
 
   function init() {
@@ -662,19 +813,31 @@
     // Seed demo events if none loaded
     seedDemoEvents();
 
-    // Auto-sync from Notion if credentials are saved
-    var savedKey = localStorage.getItem("notion_key");
-    var savedDb = localStorage.getItem("notion_db");
-    var savedProxy = localStorage.getItem("cors_proxy");
-    if (savedKey && savedDb) {
-      fetchNotionEvents(savedKey, savedDb, savedProxy || "");
-    }
+    // Check for encrypted credentials — show PIN overlay if found
+    if (hasEncryptedCredentials()) {
+      showPinOverlay();
+    } else {
+      // Legacy: auto-sync from plain-text credentials if present
+      var savedKey = localStorage.getItem("notion_key");
+      var savedDb = localStorage.getItem("notion_db");
+      var savedProxy = localStorage.getItem("cors_proxy");
+      if (savedKey && savedDb) {
+        state.credentials = {
+          notion_key: savedKey,
+          notion_db: savedDb,
+          cors_proxy: savedProxy || "",
+        };
+        fetchNotionEvents(savedKey, savedDb, savedProxy || "");
+      }
 
-    // Auto-sync from Google Calendar if credentials are saved
-    var savedGoogleKey = localStorage.getItem("google_api_key");
-    var savedGoogleCalId = localStorage.getItem("google_calendar_id");
-    if (savedGoogleKey && savedGoogleCalId) {
-      fetchGoogleCalendarEvents(savedGoogleKey, savedGoogleCalId);
+      var savedGoogleKey = localStorage.getItem("google_api_key");
+      var savedGoogleCalId = localStorage.getItem("google_calendar_id");
+      if (savedGoogleKey && savedGoogleCalId) {
+        state.credentials = state.credentials || {};
+        state.credentials.google_api_key = savedGoogleKey;
+        state.credentials.google_calendar_id = savedGoogleCalId;
+        fetchGoogleCalendarEvents(savedGoogleKey, savedGoogleCalId);
+      }
     }
 
     // Wire up UI
@@ -695,6 +858,15 @@
     $closeSettings.addEventListener("click", closeSettings);
     $exportBtn.addEventListener("click", exportJSON);
     $closeModal.addEventListener("click", closeModal);
+
+    // PIN unlock handlers
+    $pinUnlockBtn.addEventListener("click", attemptUnlock);
+    $pinInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") attemptUnlock();
+    });
+    $pinSkipBtn.addEventListener("click", function () {
+      $pinOverlay.classList.add("hidden");
+    });
 
     // Close modal on backdrop click
     $modal.addEventListener("click", function (e) {
