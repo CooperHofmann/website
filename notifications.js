@@ -7,6 +7,7 @@ var ReminderManager = (function () {
 
   var scheduledTimers = {};  // { eventId-minutes: timerId }
   var permissionGranted = false;
+  var MAX_SCHEDULE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
   /**
    * Request notification permission from the user.
@@ -62,7 +63,7 @@ var ReminderManager = (function () {
         delete scheduledTimers[key];
       }
 
-      if (delay > 0 && delay < 86400000 * 7) { // Only schedule within 7 days
+      if (delay > 0 && delay < MAX_SCHEDULE_MS) {
         scheduledTimers[key] = setTimeout(function () {
           showNotification(event, minutesBefore);
           delete scheduledTimers[key];

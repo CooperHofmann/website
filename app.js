@@ -8,7 +8,7 @@
      - Browser notification reminders
      - ICS import/export
      - Notion database sync (via CORS proxy for client-side use)
-     - Google Calendar sync
+     - Google Calendar sync (existing integration)
      - localStorage persistence
      - JSON export & URL-parameter import
      - Keyboard shortcuts

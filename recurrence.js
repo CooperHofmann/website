@@ -5,6 +5,8 @@
 var RecurrenceEngine = (function () {
   "use strict";
 
+  var MS_PER_DAY = 86400000;
+
   /**
    * Generate recurring event instances between startRange and endRange.
    * @param {Object} parentEvent - The parent event with a recurrence property.
@@ -101,7 +103,7 @@ var RecurrenceEngine = (function () {
             testDate.setDate(testDate.getDate() + i);
             if (rec.daysOfWeek.indexOf(testDate.getDay()) !== -1) {
               // Check if we've wrapped around a full week * interval
-              var weeksDiff = Math.floor((testDate - originalStart) / (7 * 86400000));
+              var weeksDiff = Math.floor((testDate - originalStart) / (7 * MS_PER_DAY));
               if (weeksDiff % interval === 0 || i <= 7) {
                 next = testDate;
                 found = true;
