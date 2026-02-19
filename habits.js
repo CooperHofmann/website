@@ -33,6 +33,7 @@ var HabitTracker = (function () {
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      if (window.CloudSync) CloudSync.schedulePush(STORAGE_KEY);
     } catch (e) {
       console.error("Failed to save habit data:", e);
     }

@@ -91,6 +91,15 @@
       window.FocusMode.init();
     }
 
+    /* Initialize Firebase Auth + Cloud Sync */
+    if (window.AuthManager) {
+      AuthManager.init();
+      AuthManager.bindUI();
+    }
+    if (window.CloudSync) {
+      CloudSync.init();
+    }
+
     /* Keyboard shortcuts: Alt+1..9 for sections, Alt+0 for focus */
     document.addEventListener("keydown", function (e) {
       if (!e.altKey) return;

@@ -58,6 +58,7 @@
 
   function saveSessions(sessions) {
     localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+    if (window.CloudSync) CloudSync.schedulePush(SESSIONS_KEY);
   }
 
   function loadSettings() {
@@ -71,6 +72,7 @@
 
   function saveSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    if (window.CloudSync) CloudSync.schedulePush(SETTINGS_KEY);
   }
 
   function mergeDefaults(obj) {

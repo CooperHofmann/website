@@ -10,7 +10,7 @@ var SyncManager = (function () {
   var statusCallback = null;
 
   /**
-   * Save events to localStorage.
+   * Save events to localStorage (and schedule cloud sync).
    * @param {Array} events - Array of event objects.
    */
   function saveEvents(events) {
@@ -22,6 +22,12 @@ var SyncManager = (function () {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
       localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
       updateStatus("synced");
+
+      /* Schedule cloud sync if available */
+      if (window.CloudSync && typeof CloudSync.schedulePush === "function") {
+        CloudSync.schedulePush(STORAGE_KEY);
+      }
+
       return true;
     } catch (e) {
       console.error("Failed to save events:", e);

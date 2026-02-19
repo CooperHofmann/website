@@ -53,6 +53,7 @@
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(assignments));
+      if (window.CloudSync) CloudSync.schedulePush(STORAGE_KEY);
     } catch (e) {
       console.error("Failed to save assignments:", e);
     }
