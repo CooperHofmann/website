@@ -598,8 +598,8 @@
   /** Edit the currently viewed event. */
   function editCurrentEvent() {
     if (!currentModalEvent) return;
-    closeModal();
     var eventToEdit = currentModalEvent;
+    closeModal();
 
     // If it's a recurring instance, edit the parent
     if (eventToEdit.isRecurringInstance && eventToEdit.parentId) {
@@ -625,8 +625,9 @@
       if (!confirm("This is a recurring event. Delete all occurrences?")) return;
     }
 
-    deleteEvent(eventToDelete.id);
+    var idToDelete = eventToDelete.id;
     closeModal();
+    deleteEvent(idToDelete);
   }
 
   /* ---------- Settings / Notion ---------- */
