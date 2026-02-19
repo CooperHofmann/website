@@ -371,6 +371,7 @@ var HabitTracker = (function () {
       var streakBadge = el("span");
       if (streak > 0) {
         streakBadge.textContent = "\uD83D\uDD25" + streak;
+        streakBadge.setAttribute("aria-label", "streak: " + streak + " days");
         streakBadge.style.cssText = "font-size:11px;color:var(--text-secondary,#6e6e73);" +
           "flex-shrink:0;margin-left:2px;";
       }
@@ -466,6 +467,7 @@ var HabitTracker = (function () {
 
     var streakStat = el("span");
     streakStat.textContent = "\uD83D\uDD25 Longest streak: " + stats.longestStreak + "d";
+    streakStat.setAttribute("aria-label", "Longest streak: " + stats.longestStreak + " days");
 
     bar.appendChild(todayStat);
     bar.appendChild(rateStat);

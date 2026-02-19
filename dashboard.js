@@ -259,17 +259,17 @@
     }
 
     var streaks = 0;
-    if (habitStats && habitStats.currentStreak !== undefined) {
+    if (habitStats && habitStats.activeStreaks !== undefined) {
+      streaks = habitStats.activeStreaks;
+    } else if (habitStats && habitStats.currentStreak !== undefined) {
       streaks = habitStats.currentStreak;
-    } else if (habitStats && habitStats.streaks !== undefined) {
-      streaks = habitStats.streaks;
     }
 
     var cards = [
       { title: "Tasks Completed", big: completed, sub: "of " + totalTodos + " total" },
       { title: "Focus Hours", big: focusHrs, sub: totalSessions + " sessions" },
       { title: "Assignments Due", big: dueCount, sub: assignStats ? assignStats.total + " total" : "no data" },
-      { title: "Current Streaks", big: streaks, sub: habitStats ? streaks + " day streak" : "no habit data" }
+      { title: "Current Streaks", big: streaks, sub: habitStats ? habitStats.longestStreak + " day longest" : "no habit data" }
     ];
 
     var grid = el("div", { className: "dash-grid" });
