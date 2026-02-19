@@ -13,6 +13,7 @@
      /userData/{userId}/habits/{habitId}
      /userData/{userId}/bookmarks/{bookmarkId}
      /userData/{userId}/assignments/{assignmentId}
+     /userData/{userId}/sessions/{sessionId}
    ========================================================================== */
 
 var CloudSync = (function () {
@@ -20,7 +21,7 @@ var CloudSync = (function () {
 
   /* ---------- Constants ---------- */
 
-  var DATA_TYPES = ["events", "todos", "notes", "goals", "habits", "bookmarks", "assignments"];
+  var DATA_TYPES = ["events", "todos", "notes", "goals", "habits", "bookmarks", "assignments", "sessions"];
   var DEBOUNCE_MS = 2000;
 
   /* ---------- State ---------- */

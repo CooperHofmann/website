@@ -1272,6 +1272,9 @@
     } else if (status === "error") {
       $syncStatus.innerHTML = "&#9888;";
       $syncStatus.title = "Sync error";
+    } else if (status === "offline") {
+      $syncStatus.innerHTML = "&#9729;";
+      $syncStatus.title = "Offline";
     }
   }
 
@@ -1446,6 +1449,9 @@
   function init() {
     // Register sync status callback
     SyncManager.onStatusChange(updateSyncStatus);
+    if (typeof CloudSync !== "undefined") {
+      CloudSync.onStatusChange(updateSyncStatus);
+    }
 
     // Load persisted events from localStorage first
     var storedEvents = SyncManager.loadEvents();
