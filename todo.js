@@ -27,6 +27,9 @@ var TodoManager = (function () {
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+      if (typeof CloudSync !== "undefined") {
+        CloudSync.syncToCloud("todos", todos);
+      }
     } catch (e) {
       console.error("Failed to save todos:", e);
     }

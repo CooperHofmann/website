@@ -53,6 +53,9 @@
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(assignments));
+      if (typeof CloudSync !== "undefined") {
+        CloudSync.syncToCloud("assignments", assignments);
+      }
     } catch (e) {
       console.error("Failed to save assignments:", e);
     }

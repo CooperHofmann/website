@@ -34,6 +34,9 @@ var GoalTracker = (function () {
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(goals));
+      if (typeof CloudSync !== "undefined") {
+        CloudSync.syncToCloud("goals", goals);
+      }
     } catch (e) {
       console.error("Failed to save goals:", e);
     }

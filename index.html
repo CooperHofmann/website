@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Productivity Hub — Calendar &amp; More</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="auth-styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,6 +14,32 @@
     />
   </head>
   <body>
+    <!-- Auth overlay / modal -->
+    <div id="auth-overlay" class="auth-hidden">
+      <div id="auth-modal">
+        <h2 id="auth-form-title">Sign In</h2>
+        <form id="auth-form" autocomplete="on" novalidate>
+          <div class="auth-field">
+            <label for="auth-username">Username</label>
+            <input id="auth-username" type="text" placeholder="your-username" autocomplete="username" spellcheck="false" />
+          </div>
+          <div class="auth-field">
+            <label for="auth-password">Password</label>
+            <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" />
+          </div>
+          <p id="auth-error"></p>
+          <button id="auth-submit" type="submit">Sign In</button>
+        </form>
+        <p id="auth-toggle">Don't have an account? <a href="#" id="auth-toggle-link">Sign up</a></p>
+      </div>
+    </div>
+
+    <!-- User info bar (shown when signed in) -->
+    <div id="user-info-bar" class="auth-hidden">
+      <span class="user-avatar" id="user-avatar-initials">?</span>
+      <span id="user-display-name"></span>
+      <button id="sign-out-btn" title="Sign out">Sign out</button>
+    </div>
     <!-- Top navigation bar -->
     <header class="topbar">
       <div class="topbar-left">
@@ -343,6 +370,25 @@
       <p>&copy; 2026 Productivity Hub &middot; Calendar &amp; Task Management</p>
     </footer>
 
+    <!-- Firebase SDK (compat mode, v10.8.0) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase project configuration (user-provided) -->
+    <script src="firebase-config.js"></script>
+    <!-- Initialize Firebase app (only when config is present and valid) -->
+    <script>
+      (function () {
+        if (typeof firebaseConfig !== "undefined" &&
+            firebaseConfig.apiKey &&
+            firebaseConfig.apiKey !== "YOUR_API_KEY") {
+          firebase.initializeApp(firebaseConfig);
+        }
+      })();
+    </script>
+    <!-- Auth & Cloud Sync -->
+    <script src="auth.js"></script>
+    <script src="cloud-sync.js"></script>
     <script src="recurrence.js"></script>
     <script src="notifications.js"></script>
     <script src="ics-parser.js"></script>
@@ -358,5 +404,6 @@
     <script src="focus.js"></script>
     <script src="app.js"></script>
     <script src="init.js"></script>
+    <script src="auth-ui.js"></script>
   </body>
 </html>

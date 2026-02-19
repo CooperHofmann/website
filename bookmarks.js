@@ -65,6 +65,9 @@ window.BookmarkManager = (function () {
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
+      if (typeof CloudSync !== "undefined") {
+        CloudSync.syncToCloud("bookmarks", bookmarks);
+      }
     } catch (e) {
       console.error("BookmarkManager: failed to save", e);
     }

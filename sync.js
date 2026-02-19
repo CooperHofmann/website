@@ -22,6 +22,10 @@ var SyncManager = (function () {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
       localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
       updateStatus("synced");
+      // Cloud sync hook
+      if (typeof CloudSync !== "undefined") {
+        CloudSync.syncToCloud("events", toSave);
+      }
       return true;
     } catch (e) {
       console.error("Failed to save events:", e);
