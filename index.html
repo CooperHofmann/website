@@ -31,10 +31,17 @@
           <button class="view-btn" data-view="week" role="tab" aria-selected="false">Week</button>
           <button class="view-btn" data-view="day" role="tab" aria-selected="false">Day</button>
         </div>
+        <!-- Add event button -->
+        <button id="add-event-btn" class="btn-add-event" aria-label="Add Event" title="Add Event">+</button>
         <!-- Notion settings toggle -->
         <button id="settings-btn" class="btn-icon" aria-label="Settings">&#9881;</button>
-        <!-- Export calendar as JSON -->
-        <button id="export-btn" class="btn-icon" aria-label="Export JSON">&#8659;</button>
+        <!-- Export menu -->
+        <button id="export-btn" class="btn-icon" aria-label="Export" title="Export">&#8659;</button>
+        <!-- Import ICS -->
+        <button id="import-btn" class="btn-icon" aria-label="Import ICS" title="Import .ics">&#8657;</button>
+        <input id="ics-file-input" type="file" accept=".ics,.ical,.ifb,.icalendar" class="hidden" />
+        <!-- Sync status -->
+        <span id="sync-status" class="sync-status" title="Sync status">&#10003;</span>
       </div>
     </header>
 
@@ -104,6 +111,141 @@
       </div>
     </div>
 
+    <!-- Event creation/edit form modal -->
+    <div id="event-form-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Event form">
+      <div class="modal-content event-form-modal">
+        <button id="close-event-form" class="modal-close" aria-label="Close">&times;</button>
+        <h3 id="event-form-title">Create New Event</h3>
+
+        <div class="form-group">
+          <label class="form-label" for="ef-title">Event Title <span class="required">*</span></label>
+          <input id="ef-title" type="text" class="form-input" placeholder="Meeting with team" maxlength="100" required />
+          <p id="ef-title-error" class="form-error"></p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Start Date &amp; Time</label>
+          <div class="datetime-row">
+            <input id="ef-start-date" type="date" class="form-input" />
+            <input id="ef-start-time" type="time" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input id="ef-all-day" type="checkbox" />
+            All day
+          </label>
+        </div>
+
+        <div class="form-group" id="ef-end-group">
+          <label class="form-label">End Date &amp; Time</label>
+          <div class="datetime-row">
+            <input id="ef-end-date" type="date" class="form-input" />
+            <input id="ef-end-time" type="time" class="form-input" />
+          </div>
+          <p id="ef-date-error" class="form-error"></p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="ef-repeat">Repeat</label>
+          <select id="ef-repeat" class="form-select">
+            <option value="never">Never</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+            <option value="custom">Custom…</option>
+          </select>
+        </div>
+
+        <!-- Custom recurrence options (hidden by default) -->
+        <div id="ef-custom-recurrence" class="form-group hidden">
+          <div class="custom-recurrence-row">
+            <label class="form-label">Every</label>
+            <div class="datetime-row">
+              <input id="ef-rec-interval" type="number" class="form-input" min="1" max="99" value="1" style="max-width:80px" />
+              <select id="ef-rec-freq" class="form-select" style="max-width:140px">
+                <option value="daily">days</option>
+                <option value="weekly">weeks</option>
+                <option value="monthly">months</option>
+                <option value="yearly">years</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="ef-days-of-week-group" class="form-group hidden">
+            <label class="form-label">On days</label>
+            <div class="days-of-week-picker">
+              <label class="dow-chip"><input type="checkbox" value="0" /><span>S</span></label>
+              <label class="dow-chip"><input type="checkbox" value="1" /><span>M</span></label>
+              <label class="dow-chip"><input type="checkbox" value="2" /><span>T</span></label>
+              <label class="dow-chip"><input type="checkbox" value="3" /><span>W</span></label>
+              <label class="dow-chip"><input type="checkbox" value="4" /><span>T</span></label>
+              <label class="dow-chip"><input type="checkbox" value="5" /><span>F</span></label>
+              <label class="dow-chip"><input type="checkbox" value="6" /><span>S</span></label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ends</label>
+            <select id="ef-rec-end" class="form-select">
+              <option value="never">Never</option>
+              <option value="after">After…</option>
+              <option value="on">On date…</option>
+            </select>
+            <div id="ef-rec-end-after" class="datetime-row hidden" style="margin-top:8px">
+              <input id="ef-rec-count" type="number" class="form-input" min="1" max="999" value="10" style="max-width:80px" />
+              <span class="form-hint-inline">occurrences</span>
+            </div>
+            <div id="ef-rec-end-on" class="hidden" style="margin-top:8px">
+              <input id="ef-rec-end-date" type="date" class="form-input" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="ef-location">Location <span class="optional">(optional)</span></label>
+          <input id="ef-location" type="text" class="form-input" placeholder="Conference Room B" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="ef-description">Description <span class="optional">(optional)</span></label>
+          <textarea id="ef-description" class="form-textarea" placeholder="Add details…" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Reminders</label>
+          <div class="checkbox-group" id="ef-reminders">
+            <label class="checkbox-label"><input type="checkbox" value="0" />At time of event</label>
+            <label class="checkbox-label"><input type="checkbox" value="5" />5 minutes before</label>
+            <label class="checkbox-label"><input type="checkbox" value="15" checked />15 minutes before</label>
+            <label class="checkbox-label"><input type="checkbox" value="30" />30 minutes before</label>
+            <label class="checkbox-label"><input type="checkbox" value="60" />1 hour before</label>
+            <label class="checkbox-label"><input type="checkbox" value="1440" />1 day before</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Color</label>
+          <div class="color-picker" id="ef-color-picker">
+            <button type="button" class="color-option selected" data-color="#0071e3" style="background:#0071e3" aria-label="Blue"></button>
+            <button type="button" class="color-option" data-color="#34c759" style="background:#34c759" aria-label="Green"></button>
+            <button type="button" class="color-option" data-color="#ff9500" style="background:#ff9500" aria-label="Orange"></button>
+            <button type="button" class="color-option" data-color="#ff3b30" style="background:#ff3b30" aria-label="Red"></button>
+            <button type="button" class="color-option" data-color="#af52de" style="background:#af52de" aria-label="Purple"></button>
+            <button type="button" class="color-option" data-color="#5856d6" style="background:#5856d6" aria-label="Indigo"></button>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button id="ef-cancel" class="btn-secondary">Cancel</button>
+          <button id="ef-delete" class="btn-danger hidden">Delete Event</button>
+          <button id="ef-save" class="btn-primary">Save Event</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Main calendar area — rendered dynamically by app.js -->
     <main id="calendar" class="calendar-wrap"></main>
 
@@ -113,7 +255,13 @@
         <button id="close-modal" class="modal-close" aria-label="Close">&times;</button>
         <h3 id="modal-title"></h3>
         <p id="modal-time" class="modal-meta"></p>
+        <p id="modal-location" class="modal-meta"></p>
+        <p id="modal-recurrence" class="modal-meta"></p>
         <p id="modal-desc" class="modal-desc"></p>
+        <div class="modal-actions">
+          <button id="modal-edit-btn" class="btn-primary">Edit</button>
+          <button id="modal-delete-btn" class="btn-danger">Delete</button>
+        </div>
       </div>
     </div>
 
@@ -121,6 +269,10 @@
       <p>&copy; 2026 Calendar App &middot; Powered by Notion</p>
     </footer>
 
+    <script src="recurrence.js"></script>
+    <script src="notifications.js"></script>
+    <script src="ics-parser.js"></script>
+    <script src="sync.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

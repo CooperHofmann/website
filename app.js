@@ -3,8 +3,15 @@
    ==========================================================================
    Features:
      - Month / Week / Day views
+     - Event creation, editing, deletion
+     - Recurrence (daily, weekly, monthly, yearly, custom)
+     - Browser notification reminders
+     - ICS import/export
      - Notion database sync (via CORS proxy for client-side use)
+     - Google Calendar sync (existing integration)
+     - localStorage persistence
      - JSON export & URL-parameter import
+     - Keyboard shortcuts
      - Lightweight, no build step, GitHub-Pages-ready
    ========================================================================== */
 
@@ -13,25 +20,28 @@
 
   /* ---------- Constants & State ---------- */
 
-  const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const MONTHS = [
+  var EVENT_COLORS = ["#0071e3", "#34c759", "#ff9500", "#ff3b30", "#af52de", "#5856d6"];
+
+  var DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  var MONTHS = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
   ];
-  const HOURS = Array.from({ length: 24 }, (_, i) => {
-    const h = i % 12 || 12;
-    const ampm = i < 12 ? "AM" : "PM";
+  var HOURS = Array.from({ length: 24 }, function (_, i) {
+    var h = i % 12 || 12;
+    var ampm = i < 12 ? "AM" : "PM";
     return h + " " + ampm;
   });
 
   /** Application state */
-  const state = {
+  var state = {
     view: "month",        // "month" | "week" | "day"
     year: new Date().getFullYear(),
     month: new Date().getMonth(),
     day: new Date().getDate(),
-    events: [],           // Array of { id, title, start, end, description }
+    events: [],           // Array of event objects
     credentials: null,    // Decrypted credentials held in memory
+    editingEventId: null, // ID of event being edited (null = creating new)
   };
 
   /* ---------- PIN Encryption / Decryption (AES-GCM + PBKDF2) ---------- */
@@ -97,29 +107,69 @@
 
   /* ---------- DOM References ---------- */
 
-  const $calendar = document.getElementById("calendar");
-  const $label = document.getElementById("current-label");
-  const $prevBtn = document.getElementById("prev-btn");
-  const $nextBtn = document.getElementById("next-btn");
-  const $todayBtn = document.getElementById("today-btn");
-  const $settingsBtn = document.getElementById("settings-btn");
-  const $settingsPanel = document.getElementById("settings-panel");
-  const $saveSettings = document.getElementById("save-settings");
-  const $closeSettings = document.getElementById("close-settings");
-  const $exportBtn = document.getElementById("export-btn");
-  const $modal = document.getElementById("event-modal");
-  const $closeModal = document.getElementById("close-modal");
-  const $modalTitle = document.getElementById("modal-title");
-  const $modalTime = document.getElementById("modal-time");
-  const $modalDesc = document.getElementById("modal-desc");
+  var $calendar = document.getElementById("calendar");
+  var $label = document.getElementById("current-label");
+  var $prevBtn = document.getElementById("prev-btn");
+  var $nextBtn = document.getElementById("next-btn");
+  var $todayBtn = document.getElementById("today-btn");
+  var $settingsBtn = document.getElementById("settings-btn");
+  var $settingsPanel = document.getElementById("settings-panel");
+  var $saveSettings = document.getElementById("save-settings");
+  var $closeSettings = document.getElementById("close-settings");
+  var $exportBtn = document.getElementById("export-btn");
+  var $modal = document.getElementById("event-modal");
+  var $closeModal = document.getElementById("close-modal");
+  var $modalTitle = document.getElementById("modal-title");
+  var $modalTime = document.getElementById("modal-time");
+  var $modalLocation = document.getElementById("modal-location");
+  var $modalRecurrence = document.getElementById("modal-recurrence");
+  var $modalDesc = document.getElementById("modal-desc");
+  var $modalEditBtn = document.getElementById("modal-edit-btn");
+  var $modalDeleteBtn = document.getElementById("modal-delete-btn");
 
   // PIN-related elements
-  const $pinOverlay = document.getElementById("pin-overlay");
-  const $pinInput = document.getElementById("pin-input");
-  const $pinUnlockBtn = document.getElementById("pin-unlock-btn");
-  const $pinError = document.getElementById("pin-error");
-  const $pinSkipBtn = document.getElementById("pin-skip-btn");
-  const $settingsPin = document.getElementById("settings-pin");
+  var $pinOverlay = document.getElementById("pin-overlay");
+  var $pinInput = document.getElementById("pin-input");
+  var $pinUnlockBtn = document.getElementById("pin-unlock-btn");
+  var $pinError = document.getElementById("pin-error");
+  var $pinSkipBtn = document.getElementById("pin-skip-btn");
+  var $settingsPin = document.getElementById("settings-pin");
+
+  // Add Event button + form
+  var $addEventBtn = document.getElementById("add-event-btn");
+  var $eventFormModal = document.getElementById("event-form-modal");
+  var $closeEventForm = document.getElementById("close-event-form");
+  var $eventFormTitle = document.getElementById("event-form-title");
+  var $efTitle = document.getElementById("ef-title");
+  var $efTitleError = document.getElementById("ef-title-error");
+  var $efStartDate = document.getElementById("ef-start-date");
+  var $efStartTime = document.getElementById("ef-start-time");
+  var $efAllDay = document.getElementById("ef-all-day");
+  var $efEndDate = document.getElementById("ef-end-date");
+  var $efEndTime = document.getElementById("ef-end-time");
+  var $efEndGroup = document.getElementById("ef-end-group");
+  var $efDateError = document.getElementById("ef-date-error");
+  var $efRepeat = document.getElementById("ef-repeat");
+  var $efCustomRecurrence = document.getElementById("ef-custom-recurrence");
+  var $efRecInterval = document.getElementById("ef-rec-interval");
+  var $efRecFreq = document.getElementById("ef-rec-freq");
+  var $efDaysOfWeekGroup = document.getElementById("ef-days-of-week-group");
+  var $efRecEnd = document.getElementById("ef-rec-end");
+  var $efRecEndAfter = document.getElementById("ef-rec-end-after");
+  var $efRecEndOn = document.getElementById("ef-rec-end-on");
+  var $efRecCount = document.getElementById("ef-rec-count");
+  var $efRecEndDate = document.getElementById("ef-rec-end-date");
+  var $efLocation = document.getElementById("ef-location");
+  var $efDescription = document.getElementById("ef-description");
+  var $efSave = document.getElementById("ef-save");
+  var $efCancel = document.getElementById("ef-cancel");
+  var $efDelete = document.getElementById("ef-delete");
+  var $efColorPicker = document.getElementById("ef-color-picker");
+
+  // Import/export
+  var $importBtn = document.getElementById("import-btn");
+  var $icsFileInput = document.getElementById("ics-file-input");
+  var $syncStatus = document.getElementById("sync-status");
 
   /* ---------- Helpers ---------- */
 
@@ -161,12 +211,38 @@
     return e;
   }
 
-  /** Get events that fall on a specific date (year, month, day). */
+  /** Get events that fall on a specific date (year, month, day). Includes recurring instances. */
   function eventsOnDate(y, m, d) {
-    return state.events.filter(function (ev) {
+    var target = new Date(y, m, d);
+    var rangeStart = new Date(y, m, d, 0, 0, 0);
+    var rangeEnd = new Date(y, m, d, 23, 59, 59);
+
+    var results = [];
+
+    state.events.forEach(function (ev) {
+      if (ev.isRecurringInstance) return; // skip pre-generated instances
+
       var s = new Date(ev.start);
-      return s.getFullYear() === y && s.getMonth() === m && s.getDate() === d;
+      if (s.getFullYear() === y && s.getMonth() === m && s.getDate() === d) {
+        results.push(ev);
+      }
+
+      // Generate recurring instances for this date
+      if (ev.recurrence && ev.recurrence.frequency !== "never") {
+        var instances = RecurrenceEngine.generateInstances(ev, rangeStart, rangeEnd);
+        instances.forEach(function (inst) {
+          var is = new Date(inst.start);
+          if (is.getFullYear() === y && is.getMonth() === m && is.getDate() === d) {
+            // Avoid duplicating the original occurrence
+            if (is.getTime() !== s.getTime()) {
+              results.push(inst);
+            }
+          }
+        });
+      }
     });
+
+    return results;
   }
 
   /** Get the Monday (start) of the week containing the given date. */
@@ -226,11 +302,32 @@
       if (isToday(state.year, state.month, d)) cell.classList.add("today");
       cell.appendChild(el("span", "day-num", String(d)));
 
+      // Quick-add button
+      var qaBtn = el("button", "quick-add-btn", "+");
+      qaBtn.setAttribute("aria-label", "Quick add event");
+      (function (day) {
+        qaBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          openEventForm(new Date(state.year, state.month, day));
+        });
+      })(d);
+      cell.appendChild(qaBtn);
+
       // Attach events
       var dayEvents = eventsOnDate(state.year, state.month, d);
       dayEvents.forEach(function (ev) {
         var pill = el("div", "event-pill", fmtTime(new Date(ev.start)) + " " + ev.title);
-        pill.addEventListener("click", openModal.bind(null, ev));
+        if (ev.color) {
+          pill.style.setProperty("--pill-color", ev.color);
+          pill.style.borderLeftColor = ev.color;
+        }
+        if (ev.isRecurringInstance || (ev.recurrence && ev.recurrence.frequency !== "never")) {
+          pill.classList.add("recurring");
+        }
+        pill.addEventListener("click", function (e) {
+          e.stopPropagation();
+          openModal(ev);
+        });
         cell.appendChild(pill);
       });
 
@@ -287,6 +384,17 @@
         slot.dataset.hour = h;
         slot.dataset.dayOffset = i;
 
+        // Quick-add on double-click
+        (function (hour, dayOffset) {
+          slot.addEventListener("dblclick", function (e) {
+            if (e.target !== slot) return;
+            var slotDate = new Date(ws);
+            slotDate.setDate(slotDate.getDate() + dayOffset);
+            slotDate.setHours(hour, 0, 0, 0);
+            openEventForm(slotDate);
+          });
+        })(h, i);
+
         // Events that start at this hour on this day
         var dt = new Date(ws);
         dt.setDate(dt.getDate() + i);
@@ -298,7 +406,16 @@
             var duration = Math.max(1, (e - s) / 3600000);
             var chip = el("div", "week-event", fmtTime(s) + " " + ev.title);
             chip.style.height = (duration * 48) + "px";
-            chip.addEventListener("click", openModal.bind(null, ev));
+            if (ev.color) {
+              chip.style.borderLeftColor = ev.color;
+            }
+            if (ev.isRecurringInstance || (ev.recurrence && ev.recurrence.frequency !== "never")) {
+              chip.classList.add("recurring");
+            }
+            chip.addEventListener("click", function (evt) {
+              evt.stopPropagation();
+              openModal(ev);
+            });
             slot.appendChild(chip);
           }
         });
@@ -326,6 +443,15 @@
       var slot = el("div", "day-slot");
       slot.dataset.hour = h;
 
+      // Quick-add on double-click
+      (function (hour) {
+        slot.addEventListener("dblclick", function (e) {
+          if (e.target !== slot) return;
+          var slotDate = new Date(state.year, state.month, state.day, hour, 0, 0);
+          openEventForm(slotDate);
+        });
+      })(h);
+
       var dayEvts = eventsOnDate(state.year, state.month, state.day);
       dayEvts.forEach(function (ev) {
         var s = new Date(ev.start);
@@ -334,7 +460,16 @@
           var duration = Math.max(1, (e - s) / 3600000);
           var chip = el("div", "day-event", fmtTime(s) + " " + ev.title);
           chip.style.height = (duration * 48) + "px";
-          chip.addEventListener("click", openModal.bind(null, ev));
+          if (ev.color) {
+            chip.style.borderLeftColor = ev.color;
+          }
+          if (ev.isRecurringInstance || (ev.recurrence && ev.recurrence.frequency !== "never")) {
+            chip.classList.add("recurring");
+          }
+          chip.addEventListener("click", function (evt) {
+            evt.stopPropagation();
+            openModal(ev);
+          });
           slot.appendChild(chip);
         }
       });
@@ -409,23 +544,90 @@
     });
   }
 
-  /* ---------- Event Modal ---------- */
+  /* ---------- Event Detail Modal ---------- */
+
+  var currentModalEvent = null;
 
   function openModal(ev) {
+    currentModalEvent = ev;
     $modalTitle.textContent = ev.title;
     var s = new Date(ev.start);
-    var timeStr = fmtDate(s) + " at " + fmtTime(s);
-    if (ev.end) {
-      var e = new Date(ev.end);
-      timeStr += " – " + fmtTime(e);
+    var timeStr = fmtDate(s);
+    if (!ev.allDay) {
+      timeStr += " at " + fmtTime(s);
+      if (ev.end) {
+        var e = new Date(ev.end);
+        timeStr += " – " + fmtTime(e);
+      }
+    } else {
+      timeStr += " (All day)";
     }
     $modalTime.textContent = timeStr;
+
+    // Location
+    if (ev.location) {
+      $modalLocation.textContent = "📍 " + ev.location;
+      $modalLocation.style.display = "";
+    } else {
+      $modalLocation.style.display = "none";
+    }
+
+    // Recurrence
+    if (ev.recurrence && ev.recurrence.frequency !== "never") {
+      $modalRecurrence.textContent = "🔁 " + RecurrenceEngine.formatRule(ev.recurrence);
+      $modalRecurrence.style.display = "";
+    } else if (ev.isRecurringInstance) {
+      $modalRecurrence.textContent = "🔁 Recurring event";
+      $modalRecurrence.style.display = "";
+    } else {
+      $modalRecurrence.style.display = "none";
+    }
+
     $modalDesc.textContent = ev.description || "";
     $modal.classList.remove("hidden");
+
+    // Focus trap
+    $modalEditBtn.focus();
   }
 
   function closeModal() {
     $modal.classList.add("hidden");
+    currentModalEvent = null;
+  }
+
+  /** Edit the currently viewed event. */
+  function editCurrentEvent() {
+    if (!currentModalEvent) return;
+    var eventToEdit = currentModalEvent;
+    closeModal();
+
+    // If it's a recurring instance, edit the parent
+    if (eventToEdit.isRecurringInstance && eventToEdit.parentId) {
+      var parent = state.events.find(function (e) { return e.id === eventToEdit.parentId; });
+      if (parent) {
+        eventToEdit = parent;
+      }
+    }
+
+    openEventFormForEdit(eventToEdit);
+  }
+
+  /** Delete the currently viewed event. */
+  function deleteCurrentEvent() {
+    if (!currentModalEvent) return;
+
+    var eventToDelete = currentModalEvent;
+    // If it's a recurring instance, delete the parent
+    if (eventToDelete.isRecurringInstance && eventToDelete.parentId) {
+      if (!confirm("This is a recurring event. Delete all occurrences?")) return;
+      eventToDelete = { id: eventToDelete.parentId };
+    } else if (eventToDelete.recurrence && eventToDelete.recurrence.frequency !== "never") {
+      if (!confirm("This is a recurring event. Delete all occurrences?")) return;
+    }
+
+    var idToDelete = eventToDelete.id;
+    closeModal();
+    deleteEvent(idToDelete);
   }
 
   /* ---------- Settings / Notion ---------- */
@@ -666,7 +868,7 @@
   /* ---------- JSON Export ---------- */
 
   function exportJSON() {
-    var data = JSON.stringify(state.events, null, 2);
+    var data = JSON.stringify(state.events.filter(function (e) { return !e.isRecurringInstance; }), null, 2);
     var blob = new Blob([data], { type: "application/json" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
@@ -676,6 +878,416 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+
+  /* ---------- ICS Export ---------- */
+
+  function exportICS() {
+    var eventsToExport = state.events.filter(function (e) { return !e.isRecurringInstance; });
+    ICSParser.downloadICS(eventsToExport, "calendar-events.ics");
+  }
+
+  /* ---------- ICS Import ---------- */
+
+  function importICS(file) {
+    ICSParser.importFromFile(file).then(function (imported) {
+      if (imported.length === 0) {
+        alert("No events found in the file.");
+        return;
+      }
+      state.events = SyncManager.mergeEvents(state.events, imported);
+      persistEvents();
+      render();
+      alert("Imported " + imported.length + " event(s).");
+    }).catch(function (err) {
+      console.error("ICS import failed:", err);
+      alert("Failed to import calendar file.");
+    });
+  }
+
+  /* ---------- Event Form (Create / Edit) ---------- */
+
+  /**
+   * Open the event creation form.
+   * @param {Date} [prefillDate] - Optional date to pre-fill.
+   */
+  function openEventForm(prefillDate) {
+    state.editingEventId = null;
+    $eventFormTitle.textContent = "Create New Event";
+    $efSave.textContent = "Save Event";
+    $efDelete.classList.add("hidden");
+
+    // Reset form
+    resetEventForm();
+
+    // Smart defaults
+    var now = prefillDate || new Date();
+    var startDate = formatDateInput(now);
+    $efStartDate.value = startDate;
+    $efEndDate.value = startDate;
+
+    // Round to next 30-min interval
+    var minutes = now.getMinutes();
+    var roundedMin = minutes < 30 ? 30 : 0;
+    var roundedHour = minutes < 30 ? now.getHours() : now.getHours() + 1;
+    if (roundedHour >= 24) roundedHour = 23;
+    $efStartTime.value = padTime(roundedHour, roundedMin);
+
+    // End = start + 1 hour
+    var endHour = roundedHour + 1;
+    if (endHour >= 24) endHour = 23;
+    $efEndTime.value = padTime(endHour, roundedMin);
+
+    // Default color
+    selectColor(EVENT_COLORS[0]);
+
+    // Default reminder
+    var reminderChecks = $efReminders().querySelectorAll("input[type='checkbox']");
+    reminderChecks.forEach(function (cb) {
+      cb.checked = cb.value === "15";
+    });
+
+    $eventFormModal.classList.remove("hidden");
+    $efTitle.focus();
+  }
+
+  /**
+   * Open the event form pre-filled for editing.
+   */
+  function openEventFormForEdit(ev) {
+    state.editingEventId = ev.id;
+    $eventFormTitle.textContent = "Edit Event";
+    $efSave.textContent = "Update Event";
+    $efDelete.classList.remove("hidden");
+
+    resetEventForm();
+
+    // Fill form fields
+    $efTitle.value = ev.title || "";
+    var s = new Date(ev.start);
+    $efStartDate.value = formatDateInput(s);
+    $efStartTime.value = padTime(s.getHours(), s.getMinutes());
+
+    if (ev.end) {
+      var e = new Date(ev.end);
+      $efEndDate.value = formatDateInput(e);
+      $efEndTime.value = padTime(e.getHours(), e.getMinutes());
+    } else {
+      $efEndDate.value = $efStartDate.value;
+      $efEndTime.value = $efStartTime.value;
+    }
+
+    $efAllDay.checked = !!ev.allDay;
+    toggleAllDay();
+
+    $efLocation.value = ev.location || "";
+    $efDescription.value = ev.description || "";
+
+    // Color
+    selectColor(ev.color || EVENT_COLORS[0]);
+
+    // Reminders
+    var reminderChecks = $efReminders().querySelectorAll("input[type='checkbox']");
+    reminderChecks.forEach(function (cb) {
+      cb.checked = (ev.reminders || []).indexOf(parseInt(cb.value, 10)) !== -1;
+    });
+
+    // Recurrence
+    if (ev.recurrence && ev.recurrence.frequency !== "never") {
+      var rec = ev.recurrence;
+      if (["daily", "weekly", "monthly", "yearly"].indexOf(rec.frequency) !== -1 && (!rec.interval || rec.interval === 1) && (!rec.daysOfWeek || rec.daysOfWeek.length === 0) && rec.endCondition === "never") {
+        $efRepeat.value = rec.frequency;
+      } else {
+        $efRepeat.value = "custom";
+        showCustomRecurrence();
+        $efRecFreq.value = rec.frequency;
+        $efRecInterval.value = rec.interval || 1;
+        if (rec.daysOfWeek && rec.daysOfWeek.length > 0) {
+          var dowChecks = $efDaysOfWeekGroup.querySelectorAll("input[type='checkbox']");
+          dowChecks.forEach(function (cb) {
+            cb.checked = rec.daysOfWeek.indexOf(parseInt(cb.value, 10)) !== -1;
+          });
+        }
+        $efRecEnd.value = rec.endCondition || "never";
+        toggleRecEndFields();
+        if (rec.endCondition === "after") $efRecCount.value = rec.endCount || 10;
+        if (rec.endCondition === "on") $efRecEndDate.value = rec.endDate || "";
+      }
+    } else {
+      $efRepeat.value = "never";
+    }
+
+    $eventFormModal.classList.remove("hidden");
+    $efTitle.focus();
+  }
+
+  /** Helper to get reminders container. */
+  function $efReminders() {
+    return document.getElementById("ef-reminders");
+  }
+
+  /** Reset the event form to blank state. */
+  function resetEventForm() {
+    $efTitle.value = "";
+    $efTitleError.textContent = "";
+    $efDateError.textContent = "";
+    $efStartDate.value = "";
+    $efStartTime.value = "";
+    $efEndDate.value = "";
+    $efEndTime.value = "";
+    $efAllDay.checked = false;
+    $efLocation.value = "";
+    $efDescription.value = "";
+    $efRepeat.value = "never";
+    $efCustomRecurrence.classList.add("hidden");
+    $efRecInterval.value = 1;
+    $efRecFreq.value = "daily";
+    $efRecEnd.value = "never";
+    $efRecEndAfter.classList.add("hidden");
+    $efRecEndOn.classList.add("hidden");
+    $efDaysOfWeekGroup.classList.add("hidden");
+
+    // Reset day-of-week checkboxes
+    var dowChecks = $efDaysOfWeekGroup.querySelectorAll("input[type='checkbox']");
+    dowChecks.forEach(function (cb) { cb.checked = false; });
+
+    // Show time fields
+    var timeInputs = $eventFormModal.querySelectorAll("input[type='time']");
+    timeInputs.forEach(function (inp) { inp.style.display = ""; });
+    $efEndGroup.classList.remove("hidden");
+  }
+
+  /** Close the event form. */
+  function closeEventForm() {
+    $eventFormModal.classList.add("hidden");
+    state.editingEventId = null;
+  }
+
+  /** Toggle time fields based on all-day checkbox. */
+  function toggleAllDay() {
+    var isAllDay = $efAllDay.checked;
+    $efStartTime.style.display = isAllDay ? "none" : "";
+    $efEndTime.style.display = isAllDay ? "none" : "";
+  }
+
+  /** Show/hide custom recurrence fields. */
+  function showCustomRecurrence() {
+    $efCustomRecurrence.classList.remove("hidden");
+    toggleDaysOfWeek();
+    toggleRecEndFields();
+  }
+
+  function hideCustomRecurrence() {
+    $efCustomRecurrence.classList.add("hidden");
+  }
+
+  /** Toggle days-of-week picker visibility. */
+  function toggleDaysOfWeek() {
+    if ($efRecFreq.value === "weekly") {
+      $efDaysOfWeekGroup.classList.remove("hidden");
+    } else {
+      $efDaysOfWeekGroup.classList.add("hidden");
+    }
+  }
+
+  /** Toggle recurrence end condition fields. */
+  function toggleRecEndFields() {
+    var val = $efRecEnd.value;
+    $efRecEndAfter.classList.toggle("hidden", val !== "after");
+    $efRecEndOn.classList.toggle("hidden", val !== "on");
+  }
+
+  /** Select a color in the color picker. */
+  function selectColor(color) {
+    var options = $efColorPicker.querySelectorAll(".color-option");
+    options.forEach(function (opt) {
+      opt.classList.toggle("selected", opt.dataset.color === color);
+    });
+  }
+
+  /** Get the currently selected color. */
+  function getSelectedColor() {
+    var selected = $efColorPicker.querySelector(".color-option.selected");
+    return selected ? selected.dataset.color : EVENT_COLORS[0];
+  }
+
+  /** Validate the event form. Returns true if valid. */
+  function validateEventForm() {
+    var valid = true;
+    $efTitleError.textContent = "";
+    $efDateError.textContent = "";
+
+    // Title required
+    var title = $efTitle.value.trim();
+    if (!title) {
+      $efTitleError.textContent = "Event title is required.";
+      valid = false;
+    } else if (title.length > 100) {
+      $efTitleError.textContent = "Title must be 100 characters or less.";
+      valid = false;
+    }
+
+    // Date validation
+    if (!$efStartDate.value) {
+      $efDateError.textContent = "Start date is required.";
+      valid = false;
+    } else if (!$efAllDay.checked) {
+      var startDT = new Date($efStartDate.value + "T" + ($efStartTime.value || "00:00"));
+      var endDT = new Date(($efEndDate.value || $efStartDate.value) + "T" + ($efEndTime.value || $efStartTime.value || "00:00"));
+      if (endDT < startDT) {
+        $efDateError.textContent = "End time must be after start time.";
+        valid = false;
+      }
+    }
+
+    return valid;
+  }
+
+  /** Save event from form data. */
+  function saveEventFromForm() {
+    if (!validateEventForm()) return;
+
+    var title = $efTitle.value.trim();
+    var startDate = $efStartDate.value;
+    var startTime = $efStartTime.value || "00:00";
+    var endDate = $efEndDate.value || startDate;
+    var endTime = $efEndTime.value || startTime;
+    var isAllDay = $efAllDay.checked;
+
+    var startISO, endISO;
+    if (isAllDay) {
+      startISO = new Date(startDate + "T00:00:00").toISOString();
+      endISO = endDate ? new Date(endDate + "T23:59:59").toISOString() : null;
+    } else {
+      startISO = new Date(startDate + "T" + startTime).toISOString();
+      endISO = new Date(endDate + "T" + endTime).toISOString();
+    }
+
+    // Gather reminders
+    var reminders = [];
+    var reminderChecks = $efReminders().querySelectorAll("input[type='checkbox']:checked");
+    reminderChecks.forEach(function (cb) {
+      reminders.push(parseInt(cb.value, 10));
+    });
+
+    // Gather recurrence
+    var recurrence = { frequency: "never" };
+    var repeatVal = $efRepeat.value;
+    if (repeatVal !== "never") {
+      if (repeatVal === "custom") {
+        recurrence = {
+          frequency: $efRecFreq.value,
+          interval: parseInt($efRecInterval.value, 10) || 1,
+          endCondition: $efRecEnd.value,
+        };
+
+        if (recurrence.frequency === "weekly") {
+          var daysOfWeek = [];
+          $efDaysOfWeekGroup.querySelectorAll("input[type='checkbox']:checked").forEach(function (cb) {
+            daysOfWeek.push(parseInt(cb.value, 10));
+          });
+          if (daysOfWeek.length > 0) recurrence.daysOfWeek = daysOfWeek;
+        }
+
+        if (recurrence.endCondition === "after") {
+          recurrence.endCount = parseInt($efRecCount.value, 10) || 10;
+        } else if (recurrence.endCondition === "on") {
+          recurrence.endDate = $efRecEndDate.value || null;
+        }
+      } else {
+        recurrence = {
+          frequency: repeatVal,
+          interval: 1,
+          endCondition: "never",
+        };
+      }
+    }
+
+    var eventData = {
+      title: title,
+      start: startISO,
+      end: endISO,
+      allDay: isAllDay,
+      location: $efLocation.value.trim(),
+      description: $efDescription.value.trim(),
+      color: getSelectedColor(),
+      reminders: reminders,
+      recurrence: recurrence,
+    };
+
+    if (state.editingEventId) {
+      // Update existing event
+      var idx = state.events.findIndex(function (e) { return e.id === state.editingEventId; });
+      if (idx !== -1) {
+        eventData.id = state.editingEventId;
+        state.events[idx] = eventData;
+      }
+    } else {
+      // Create new event
+      eventData.id = SyncManager.generateId();
+      state.events.push(eventData);
+    }
+
+    // Persist, schedule reminders, re-render
+    persistEvents();
+    ReminderManager.scheduleReminders(eventData);
+    closeEventForm();
+    render();
+  }
+
+  /** Delete an event by ID. */
+  function deleteEvent(eventId) {
+    state.events = state.events.filter(function (e) { return e.id !== eventId; });
+    ReminderManager.cancelReminders(eventId);
+    persistEvents();
+    render();
+  }
+
+  /** Delete event from the edit form. */
+  function deleteEventFromForm() {
+    if (!state.editingEventId) return;
+    var ev = state.events.find(function (e) { return e.id === state.editingEventId; });
+    if (ev && ev.recurrence && ev.recurrence.frequency !== "never") {
+      if (!confirm("This is a recurring event. Delete all occurrences?")) return;
+    }
+    deleteEvent(state.editingEventId);
+    closeEventForm();
+  }
+
+  /** Persist events to localStorage via SyncManager. */
+  function persistEvents() {
+    SyncManager.saveEvents(state.events);
+  }
+
+  /** Update sync status indicator in UI. */
+  function updateSyncStatus(status) {
+    if (!$syncStatus) return;
+    $syncStatus.className = "sync-status " + status;
+    if (status === "synced") {
+      $syncStatus.innerHTML = "&#10003;";
+      $syncStatus.title = "Saved";
+    } else if (status === "syncing") {
+      $syncStatus.innerHTML = "&#10227;";
+      $syncStatus.title = "Syncing…";
+    } else if (status === "error") {
+      $syncStatus.innerHTML = "&#9888;";
+      $syncStatus.title = "Sync error";
+    }
+  }
+
+  /* ---------- Helper formatters for form ---------- */
+
+  /** Format a Date to YYYY-MM-DD for input[type=date]. */
+  function formatDateInput(d) {
+    var y = d.getFullYear();
+    var m = d.getMonth() + 1;
+    var day = d.getDate();
+    return y + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+  }
+
+  /** Format hours/minutes to HH:MM for input[type=time]. */
+  function padTime(h, m) {
+    return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
   }
 
   /* ---------- URL Parameter Import ---------- */
@@ -729,35 +1341,60 @@
         title: "Team Standup",
         start: new Date(y, m, d, 9, 0).toISOString(),
         end: new Date(y, m, d, 9, 30).toISOString(),
+        allDay: false,
+        location: "Zoom",
         description: "Daily sync with the team.",
+        color: "#0071e3",
+        reminders: [15],
+        recurrence: { frequency: "weekly", interval: 1, daysOfWeek: [1, 2, 3, 4, 5], endCondition: "never" },
       },
       {
         id: "demo-2",
         title: "Design Review",
         start: new Date(y, m, d + 1, 14, 0).toISOString(),
         end: new Date(y, m, d + 1, 15, 0).toISOString(),
+        allDay: false,
+        location: "Conference Room B",
         description: "Review the new calendar interface designs.",
+        color: "#34c759",
+        reminders: [15, 60],
+        recurrence: { frequency: "never" },
       },
       {
         id: "demo-3",
         title: "Lunch with Alex",
         start: new Date(y, m, d + 2, 12, 0).toISOString(),
         end: new Date(y, m, d + 2, 13, 0).toISOString(),
+        allDay: false,
+        location: "Sushi Place",
         description: "Catch up over sushi.",
+        color: "#ff9500",
+        reminders: [30],
+        recurrence: { frequency: "never" },
       },
       {
         id: "demo-4",
         title: "Sprint Planning",
         start: new Date(y, m, d + 3, 10, 0).toISOString(),
         end: new Date(y, m, d + 3, 11, 30).toISOString(),
+        allDay: false,
+        location: "",
         description: "Plan next sprint goals and tasks.",
+        color: "#af52de",
+        reminders: [15],
+        recurrence: { frequency: "weekly", interval: 2, endCondition: "never" },
       },
       {
         id: "demo-5",
         title: "Yoga Class",
         start: new Date(y, m, d - 1, 7, 0).toISOString(),
         end: new Date(y, m, d - 1, 8, 0).toISOString(),
+        allDay: false,
+        location: "Studio",
         description: "Morning yoga session at the studio.",
+        color: "#5856d6",
+        reminders: [60],
+        recurrence: { frequency: "never" },
       },
     ];
   }
@@ -807,11 +1444,23 @@
   /* ---------- Initialization ---------- */
 
   function init() {
-    // Import events from URL parameters first
+    // Register sync status callback
+    SyncManager.onStatusChange(updateSyncStatus);
+
+    // Load persisted events from localStorage first
+    var storedEvents = SyncManager.loadEvents();
+    if (storedEvents.length > 0) {
+      state.events = storedEvents;
+    }
+
+    // Import events from URL parameters
     importFromURL();
 
     // Seed demo events if none loaded
     seedDemoEvents();
+
+    // Persist initial state (including demos if applicable)
+    persistEvents();
 
     // Check for encrypted credentials — show PIN overlay if found
     if (hasEncryptedCredentials()) {
@@ -840,7 +1489,7 @@
       }
     }
 
-    // Wire up UI
+    // Wire up navigation
     $prevBtn.addEventListener("click", navigatePrev);
     $nextBtn.addEventListener("click", navigateNext);
     $todayBtn.addEventListener("click", goToday);
@@ -853,11 +1502,66 @@
       });
     });
 
+    // Settings
     $settingsBtn.addEventListener("click", openSettings);
     $saveSettings.addEventListener("click", saveSettings);
     $closeSettings.addEventListener("click", closeSettings);
-    $exportBtn.addEventListener("click", exportJSON);
+
+    // Export (JSON + ICS)
+    $exportBtn.addEventListener("click", function () {
+      // Offer both formats
+      exportICS();
+    });
+
+    // Import ICS
+    $importBtn.addEventListener("click", function () {
+      $icsFileInput.click();
+    });
+    $icsFileInput.addEventListener("change", function () {
+      if ($icsFileInput.files && $icsFileInput.files[0]) {
+        importICS($icsFileInput.files[0]);
+        $icsFileInput.value = ""; // Reset for re-import
+      }
+    });
+
+    // Event detail modal
     $closeModal.addEventListener("click", closeModal);
+    $modalEditBtn.addEventListener("click", editCurrentEvent);
+    $modalDeleteBtn.addEventListener("click", deleteCurrentEvent);
+
+    // Add Event button
+    $addEventBtn.addEventListener("click", function () {
+      openEventForm(new Date(state.year, state.month, state.day));
+    });
+
+    // Event form handlers
+    $closeEventForm.addEventListener("click", closeEventForm);
+    $efCancel.addEventListener("click", closeEventForm);
+    $efSave.addEventListener("click", saveEventFromForm);
+    $efDelete.addEventListener("click", deleteEventFromForm);
+
+    // All-day toggle
+    $efAllDay.addEventListener("change", toggleAllDay);
+
+    // Repeat dropdown
+    $efRepeat.addEventListener("change", function () {
+      if ($efRepeat.value === "custom") {
+        showCustomRecurrence();
+      } else {
+        hideCustomRecurrence();
+      }
+    });
+
+    // Custom recurrence sub-fields
+    $efRecFreq.addEventListener("change", toggleDaysOfWeek);
+    $efRecEnd.addEventListener("change", toggleRecEndFields);
+
+    // Color picker
+    $efColorPicker.querySelectorAll(".color-option").forEach(function (opt) {
+      opt.addEventListener("click", function () {
+        selectColor(opt.dataset.color);
+      });
+    });
 
     // PIN unlock handlers
     $pinUnlockBtn.addEventListener("click", attemptUnlock);
@@ -868,22 +1572,67 @@
       $pinOverlay.classList.add("hidden");
     });
 
-    // Close modal on backdrop click
+    // Close modals on backdrop click
     $modal.addEventListener("click", function (e) {
       if (e.target === $modal) closeModal();
     });
-
-    // Close settings on backdrop click
+    $eventFormModal.addEventListener("click", function (e) {
+      if (e.target === $eventFormModal) closeEventForm();
+    });
     $settingsPanel.addEventListener("click", function (e) {
       if (e.target === $settingsPanel) closeSettings();
     });
 
-    // Keyboard: Escape closes modals
+    // Keyboard shortcuts
     document.addEventListener("keydown", function (e) {
+      // Escape closes modals
       if (e.key === "Escape") {
-        closeModal();
-        closeSettings();
+        if (!$eventFormModal.classList.contains("hidden")) {
+          closeEventForm();
+        } else if (!$modal.classList.contains("hidden")) {
+          closeModal();
+        } else {
+          closeSettings();
+        }
+        return;
       }
+
+      // Don't trigger shortcuts when typing in an input
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+
+      // Ctrl/Cmd+N: New event
+      if ((e.ctrlKey || e.metaKey) && e.key === "n") {
+        e.preventDefault();
+        openEventForm(new Date(state.year, state.month, state.day));
+        return;
+      }
+
+      // T: Go to today
+      if (e.key === "t" || e.key === "T") {
+        goToday();
+        return;
+      }
+
+      // Arrow left/right: navigate prev/next
+      if (e.key === "ArrowLeft") {
+        navigatePrev();
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        navigateNext();
+        return;
+      }
+
+      // 1/2/3: Switch views
+      if (e.key === "1") { state.view = "month"; setActiveViewBtn("month"); render(); return; }
+      if (e.key === "2") { state.view = "week"; setActiveViewBtn("week"); render(); return; }
+      if (e.key === "3") { state.view = "day"; setActiveViewBtn("day"); render(); return; }
+    });
+
+    // Request notification permission (non-blocking)
+    ReminderManager.requestPermission().then(function () {
+      // Schedule reminders for all upcoming events
+      ReminderManager.scheduleAll(state.events);
     });
 
     // Initial render
