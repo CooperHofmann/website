@@ -19,6 +19,10 @@ var AuthManager = (function () {
       console.warn("AuthManager: Firebase Auth SDK not loaded.");
       return;
     }
+    if (!firebase.apps || firebase.apps.length === 0) {
+      console.warn("AuthManager: Firebase app not initialized. Add your config to index.html.");
+      return;
+    }
     auth = firebase.auth();
     googleProvider = new firebase.auth.GoogleAuthProvider();
 

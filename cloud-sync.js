@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Cloud Sync — Firebase Firestore cross-device data synchronisation
+   Cloud Sync — Firebase Firestore cross-device data synchronization
    ==========================================================================
    Depends on: Firebase SDK (firestore), AuthManager
    Works alongside SyncManager (localStorage) for offline-first approach.
@@ -47,6 +47,10 @@ var CloudSync = (function () {
   function init() {
     if (typeof firebase === "undefined" || !firebase.firestore) {
       console.warn("CloudSync: Firestore SDK not loaded.");
+      return;
+    }
+    if (!firebase.apps || firebase.apps.length === 0) {
+      console.warn("CloudSync: Firebase app not initialized. Add your config to index.html.");
       return;
     }
 

@@ -11,28 +11,6 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <!-- Firebase SDK (compat builds for broad browser support) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script>
-      /* ── Firebase Configuration ──────────────────────────────────────────
-         Replace the placeholder values below with your own Firebase project
-         config from https://console.firebase.google.com
-         Go to: Project Settings → General → Your apps → Firebase SDK snippet
-         ────────────────────────────────────────────────────────────────── */
-      var firebaseConfig = {
-        apiKey:            "YOUR_API_KEY",
-        authDomain:        "YOUR_PROJECT.firebaseapp.com",
-        projectId:         "YOUR_PROJECT",
-        storageBucket:     "YOUR_PROJECT.appspot.com",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId:             "YOUR_APP_ID"
-      };
-      if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
-        firebase.initializeApp(firebaseConfig);
-      }
-    </script>
   </head>
   <body>
     <!-- Top navigation bar -->
@@ -141,15 +119,17 @@
 
         <div class="auth-divider"><span>or</span></div>
 
-        <label class="auth-field-label" for="auth-email">Email</label>
-        <input id="auth-email" type="email" class="auth-input" placeholder="you@example.com" autocomplete="email" />
+        <form id="auth-form" onsubmit="return false;" autocomplete="on">
+          <label class="auth-field-label" for="auth-email">Email</label>
+          <input id="auth-email" type="email" class="auth-input" placeholder="you@example.com" autocomplete="email" />
 
-        <label class="auth-field-label" for="auth-password">Password</label>
-        <input id="auth-password" type="password" class="auth-input" placeholder="Enter password" autocomplete="current-password" />
+          <label class="auth-field-label" for="auth-password">Password</label>
+          <input id="auth-password" type="password" class="auth-input" placeholder="Enter password" autocomplete="current-password" />
 
-        <p id="auth-error" class="auth-error"></p>
+          <p id="auth-error" class="auth-error"></p>
 
-        <button id="auth-submit-btn" class="btn-primary auth-submit" type="button">Sign In</button>
+          <button id="auth-submit-btn" class="btn-primary auth-submit" type="button">Sign In</button>
+        </form>
 
         <p class="auth-toggle-wrap">
           <a href="#" id="auth-toggle">Don&#8217;t have an account? Sign up</a>
@@ -406,6 +386,28 @@
       <p>&copy; 2026 Productivity Hub &middot; Calendar &amp; Task Management</p>
     </footer>
 
+    <!-- Firebase SDK (compat builds for broad browser support) — loaded in body to avoid blocking render -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script>
+      /* ── Firebase Configuration ──────────────────────────────────────────
+         Replace the placeholder values below with your own Firebase project
+         config from https://console.firebase.google.com
+         Go to: Project Settings → General → Your apps → Firebase SDK snippet
+         ────────────────────────────────────────────────────────────────── */
+      var firebaseConfig = {
+        apiKey:            "YOUR_API_KEY",
+        authDomain:        "YOUR_PROJECT.firebaseapp.com",
+        projectId:         "YOUR_PROJECT",
+        storageBucket:     "YOUR_PROJECT.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId:             "YOUR_APP_ID"
+      };
+      if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+        firebase.initializeApp(firebaseConfig);
+      }
+    </script>
     <script src="recurrence.js"></script>
     <script src="notifications.js"></script>
     <script src="ics-parser.js"></script>
