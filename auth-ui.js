@@ -32,11 +32,12 @@
    * Used to reload module state after cloud data arrives.
    */
   var MODULE_MAP = {
-    todos:       { storageKey: "todo_items",    moduleGlobal: "TodoManager",       containerId: "tasks-container" },
-    notes:       { storageKey: "quick_notes",   moduleGlobal: "NotesManager",      containerId: "notes-container" },
-    goals:       { storageKey: "goal_tracker",  moduleGlobal: "GoalTracker",       containerId: "goals-container" },
-    bookmarks:   { storageKey: "bookmarks",     moduleGlobal: "BookmarkManager",   containerId: "bookmarks-container" },
-    assignments: { storageKey: "assignments",   moduleGlobal: "AssignmentTracker", containerId: "assignments-container" }
+    todos:       { storageKey: "todo_items",        moduleGlobal: "TodoManager",       containerId: "tasks-container" },
+    notes:       { storageKey: "quick_notes",       moduleGlobal: "NotesManager",      containerId: "notes-container" },
+    goals:       { storageKey: "goal_tracker",      moduleGlobal: "GoalTracker",       containerId: "goals-container" },
+    bookmarks:   { storageKey: "bookmarks",         moduleGlobal: "BookmarkManager",   containerId: "bookmarks-container" },
+    assignments: { storageKey: "assignments",       moduleGlobal: "AssignmentTracker", containerId: "assignments-container" },
+    sessions:    { storageKey: "pomodoro_sessions", moduleGlobal: "PomodoroTimer",     containerId: "timer-container" }
   };
 
   /**
@@ -90,6 +91,22 @@
     };
 
     return callbacks;
+  }
+
+  /* ---------- Real-time listeners ---------- */
+
+  /**
+   * Start Firestore real-time listeners for cross-device sync.
+   * When data changes on another device, the local module is updated.
+   * Detaches any existing listeners first to prevent duplicates.
+   */
+  function startRealtimeListeners() {
+    if (typeof CloudSync === "undefined") return;
+    CloudSync.detachListeners();
+    var callbacks = buildLoadCallbacks();
+    Object.keys(callbacks).forEach(function (type) {
+      CloudSync.listenCollection(type, callbacks[type]);
+    });
   }
 
   /* ---------- Show / Hide ---------- */
@@ -255,7 +272,10 @@
         hideModal();
         // Initialize cloud sync and load data from Firestore
         if (typeof CloudSync !== "undefined") {
-          CloudSync.onSignIn(user.uid, buildLoadCallbacks());
+          CloudSync.onSignIn(user.uid, buildLoadCallbacks()).then(function () {
+            // Start real-time listeners after initial data load completes
+            startRealtimeListeners();
+          });
         }
       } else {
         hideUserInfo();

@@ -587,6 +587,9 @@ a {
 .sync-status.error {
   color: #d93025;
 }
+.sync-status.offline {
+  color: #94a3b8;
+}
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }

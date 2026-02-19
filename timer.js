@@ -58,6 +58,9 @@
 
   function saveSessions(sessions) {
     localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+    if (typeof CloudSync !== "undefined") {
+      CloudSync.syncToCloud("sessions", sessions);
+    }
   }
 
   function loadSettings() {

@@ -13,6 +13,7 @@
      /userData/{userId}/habits/{habitId}
      /userData/{userId}/bookmarks/{bookmarkId}
      /userData/{userId}/assignments/{assignmentId}
+     /userData/{userId}/sessions/{sessionId}
    ========================================================================== */
 
 var CloudSync = (function () {
@@ -20,7 +21,7 @@ var CloudSync = (function () {
 
   /* ---------- Constants ---------- */
 
-  var DATA_TYPES = ["events", "todos", "notes", "goals", "habits", "bookmarks", "assignments"];
+  var DATA_TYPES = ["events", "todos", "notes", "goals", "habits", "bookmarks", "assignments", "sessions"];
   var DEBOUNCE_MS = 2000;
 
   /* ---------- State ---------- */
@@ -241,11 +242,11 @@ var CloudSync = (function () {
    * @param {Object} [loadCallbacks] - Map of type → function(items).
    */
   function onSignIn(userId, loadCallbacks) {
-    if (typeof firebase === "undefined" || !firebase.firestore) return;
+    if (typeof firebase === "undefined" || !firebase.firestore) return Promise.resolve();
     db = firebase.firestore();
     currentUserId = userId;
     setStatus("syncing");
-    loadAllData(loadCallbacks).then(function () {
+    return loadAllData(loadCallbacks).then(function () {
       flushOfflineQueue();
     });
   }
