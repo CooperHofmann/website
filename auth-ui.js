@@ -98,9 +98,11 @@
   /**
    * Start Firestore real-time listeners for cross-device sync.
    * When data changes on another device, the local module is updated.
+   * Detaches any existing listeners first to prevent duplicates.
    */
   function startRealtimeListeners() {
     if (typeof CloudSync === "undefined") return;
+    CloudSync.detachListeners();
     var callbacks = buildLoadCallbacks();
     Object.keys(callbacks).forEach(function (type) {
       CloudSync.listenCollection(type, callbacks[type]);
@@ -270,9 +272,10 @@
         hideModal();
         // Initialize cloud sync and load data from Firestore
         if (typeof CloudSync !== "undefined") {
-          CloudSync.onSignIn(user.uid, buildLoadCallbacks());
-          // Start real-time listeners for cross-device sync
-          startRealtimeListeners();
+          CloudSync.onSignIn(user.uid, buildLoadCallbacks()).then(function () {
+            // Start real-time listeners after initial data load completes
+            startRealtimeListeners();
+          });
         }
       } else {
         hideUserInfo();

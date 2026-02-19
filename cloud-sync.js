@@ -242,11 +242,11 @@ var CloudSync = (function () {
    * @param {Object} [loadCallbacks] - Map of type → function(items).
    */
   function onSignIn(userId, loadCallbacks) {
-    if (typeof firebase === "undefined" || !firebase.firestore) return;
+    if (typeof firebase === "undefined" || !firebase.firestore) return Promise.resolve();
     db = firebase.firestore();
     currentUserId = userId;
     setStatus("syncing");
-    loadAllData(loadCallbacks).then(function () {
+    return loadAllData(loadCallbacks).then(function () {
       flushOfflineQueue();
     });
   }
