@@ -312,8 +312,52 @@ In `app.js`, edit the `seedDemoEvents()` function to add your own default events
 ├── notifications.js  — Browser notification reminders
 ├── ics-parser.js     — iCalendar import/export
 ├── sync.js           — localStorage and sync management
+├── api/
+│   └── calendar.ics.js — Vercel serverless function: live .ics calendar feed
+├── vercel.json       — Vercel deployment config (CORS, routing)
 └── README.md         — This file
 ```
+
+## Apple Calendar Sync
+
+Subscribe to a live `.ics` feed so events appear automatically in Apple Calendar (or any iCal-compatible app) and refresh on a schedule you choose.
+
+### How It Works
+
+A Vercel serverless function at `api/calendar.ics.js` generates a valid iCalendar feed on every request. Once you subscribe, Apple Calendar polls the URL periodically and keeps your calendar up to date.
+
+### Feed URL
+
+```
+https://<your-site>.vercel.app/api/calendar.ics
+```
+
+Replace `<your-site>` with your actual Vercel project subdomain (e.g. `cooperhofmann`).
+
+### Subscribe on Mac
+
+1. Open **Calendar**.
+2. From the menu bar choose **File → New Calendar Subscription…**
+3. Paste the feed URL and click **Subscribe**.
+4. Set **Auto-refresh** to **Every Hour** or **Every Day**.
+5. Click **OK**.
+
+### Subscribe on iPhone / iPad
+
+1. Open **Settings → Calendar → Accounts → Add Account → Other**.
+2. Tap **Add Subscribed Calendar**.
+3. Paste the feed URL and tap **Next**.
+4. Optionally set a name and refresh interval, then tap **Save**.
+
+### Recommended Refresh Interval
+
+**Every hour** keeps events reasonably current without hammering the server. Choose **Every day** if the calendar changes infrequently.
+
+### Current Content
+
+The feed currently returns three demo events so you can verify the subscription works immediately. To show real events, update the `events` array in `api/calendar.ics.js` or connect it to a data source (Firestore, Notion, etc.).
+
+---
 
 ## License
 
