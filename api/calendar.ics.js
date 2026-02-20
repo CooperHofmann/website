@@ -1,8 +1,8 @@
 // This file generates an .ics feed from your events
 // Vercel will automatically turn this into an API endpoint
 
-// Import your ICS export logic (we'll adapt it)
-export default async function handler(req, res) {
+// Must use CommonJS exports for Vercel Node.js runtime
+module.exports = function handler(req, res) {
   // For now, let's use sample events
   // Later you can connect this to a database
   const events = [
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
   res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="calendar.ics"');
   res.status(200).send(icsContent);
-}
+};
 
 // Copied from your ics-parser.js
 function generateICS(events) {
